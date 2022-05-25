@@ -1,17 +1,13 @@
-// GPIO mapping
-// TFT_DC   D1
-// TFT_RST  D2
-// CO2_SDA  D3
-// TFT_CS   D4
-// TFT SCK  D5
-// CO2_SCL  D6
-// TFT SDA  D7
-// LED_PIN  D8
-
-// Edits to TFT_eSPI library
-// User_Setup_Select.h - #include <User_Setups/Setup8_ILI9163_128x128.h>
-// User_Setup.h - #define ILI9163_DRIVER
-// Setup8_ILI9163_128x128.h - pins & height/width fix #define TFT_WIDTH 130 #define TFT_HEIGHT 129
+// GPIO mappings
+//          D0  16
+// TFT_DC   D1  5
+// TFT_RST  D2  4
+// CO2_SDA  D3  0
+// TFT_CS   D4  2
+// TFT_SCK  D5  14
+// CO2_SCL  D6  12
+// TFT_SDA  D7  13
+// LED_PIN  D8  15
 
 #include <Arduino.h>
 #include <TFT_eSPI.h>
@@ -73,31 +69,6 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) 
   tft.pushImage(x, y, w, h, bitmap);
   // Return 1 to decode next block
   return 1;
-}
-
-void listFiles(void) {
-  Serial.println();
-  Serial.println("SPIFFS files found:");
-
-  fs::Dir dir = SPIFFS.openDir("/"); // Root directory
-  String  line = "=====================================";
-
-  Serial.println(line);
-  Serial.println("  File name               Size");
-  Serial.println(line);
-
-  while (dir.next()) {
-    String fileName = dir.fileName();
-    Serial.print(fileName);
-    int spaces = 25 - fileName.length(); // Tabulate nicely
-    while (spaces--) Serial.print(" ");
-    fs::File f = dir.openFile("r");
-    Serial.print(f.size()); Serial.println(" bytes");
-  }
-
-  Serial.println(line);
-  Serial.println();
-  delay(1000);
 }
 
 // Draw a + mark centred on x,y
@@ -277,7 +248,6 @@ void setup(void) {
     Serial.println("SPIFFS initialisation failed!");
     while (1) yield(); // Stay here twiddling thumbs waiting
   }
-  if (DEBUG) { Serial.println("Initialisation done."); listFiles(); } // Lists the files so you can see what is in the SPIFFS
 
   // load fonts
   bool font_missing = false;
