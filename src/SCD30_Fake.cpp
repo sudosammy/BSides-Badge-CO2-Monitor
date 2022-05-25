@@ -176,7 +176,7 @@ bool SCD30_Fake::readMeasurement()
   // make up data!!
   co2 = random(lastCo2F-50,lastCo2F+50);
   temperature = (float)random(lastTempF-1,lastTempF+1)+(float)random(1,99)/100.0;
-  humidity = (float)random(lastTempF-1,lastTempF+1)+(float)random(1,99)/100.0;
+  humidity = (float)random(lastHumidF-1,lastHumidF+1)+(float)random(1,99)/100.0;
 
   // Mark our global variables as fresh
   co2HasBeenReported = false;
