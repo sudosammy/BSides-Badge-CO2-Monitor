@@ -4,6 +4,9 @@ var gauge1 = Gauge(
     max: 2500,
     dialStartAngle: 90,
     dialEndAngle: 0,
+    label: function(value) {
+      return value.toLocaleString(undefined, {maximumFractionDigits: 0});
+    },
     value: 400,
     color: function(value) {
       if(value < 300) {
@@ -26,6 +29,9 @@ var gauge2 = Gauge(
       max: 50,
       dialStartAngle: 90,
       dialEndAngle: 0,
+      label: function(value) {
+        return Math.round(value * 100) / 100;
+      },
       value: 20,
       color: function(value) {
         if(value < 0) {
@@ -48,6 +54,9 @@ document.getElementById("gauge3"), {
     max: 100,
     dialStartAngle: 90,
     dialEndAngle: 0,
+    label: function(value) {
+      return Math.round(value * 100) / 100;
+    },
     value: 50,
     color: function(value) {
       if(value < 0) {
