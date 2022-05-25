@@ -19,7 +19,7 @@
 #include <Wire.h>
 #include <SparkFun_SCD30_Arduino_Library.h>
 #include <CircularBuffer.h>
-#include <jled.h> // This is overkill for the single LED
+#include <jled.h>
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
@@ -35,7 +35,7 @@
 #define ONBOARD_LED 2
 #define AA_FONT_SMALL "fonts/NotoSansBold15"
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
-TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in Setup8_ILI9163_128x128.h
+TFT_eSPI tft = TFT_eSPI();
 #ifdef FAKE_SENSOR
   #include "SCD30_Fake.h"
   SCD30_Fake airSensor;
@@ -70,12 +70,6 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) 
   // Return 1 to decode next block
   return 1;
 }
-
-// Draw a + mark centred on x,y
-void drawDatumMarker(int x, int y) {
-  tft.drawLine(x - 5, y, x + 5, y, TFT_GREEN);
-  tft.drawLine(x, y - 5, x, y + 5, TFT_GREEN);
-}
 //====================================================================================
 
 int getYOffset(uint16_t co2) {
@@ -91,19 +85,18 @@ int getYOffset(uint16_t co2) {
 CircularBuffer<uint16_t,(GRAPH_END_X-GRAPH_BEG_X-1)> measurement; // we -1 to not clash with our end x axis line
 void updGraph(uint16_t co2) {
   if (DEBUG) { Serial.println("Updating graph data"); }
-  // take the current co2 reading and push to buffer
+  // take the most current co2 reading and push to CircularBuffer
   measurement.push(co2);
 
   // clear TFT area before plotting
   tft.fillRect(GRAPH_BEG_X+1, GRAPH_BEG_Y, (GRAPH_END_X-GRAPH_BEG_X-1), (GRAPH_END_Y-GRAPH_BEG_Y+1), TFT_BLACK);
 
-  // for all readings in buffer
+  // plot all values in CircularBuffer
   for (int xOffset=0; xOffset<measurement.size(); xOffset++) {
     uint16_t co2Value = measurement[xOffset];
     int xValue = GRAPH_BEG_X + 1 + xOffset; // we +1 here so that xValue doesn't clash with our x axis line
     int yValue = GRAPH_END_Y - getYOffset(co2Value);
 
-    // draw graph line w/ colour
     if (co2Value >= PPM_RED) {
       tft.drawLine(xValue, yValue, xValue, yValue, TFT_RED);
     } else if (co2Value >= PPM_ORANGE) {
@@ -162,19 +155,8 @@ void initWiFi() {
   WiFi.persistent(true);
 }
 
-void notFound(AsyncWebServerRequest *request) {
-  request->send(404, "text/plain", "Not found");
-}
-
-// struct lastReading {
-//   uint16_t co2 = 0;
-//   float temp, humidity = 0;
-// };
-
 void updateReadings() {
-  // check if update needed
-  if (airSensor.dataAvailable()) {
-    // update and return
+  if (airSensor.dataAvailable()) { // check if update available
     ATOMIC() {
       // so i'm not 100% whether this need to be atomic but my reasoning behind doing this is
       // the webserver is async (apparently) and as such HTTP responses that require data from the
@@ -192,26 +174,10 @@ void updateReadings() {
   }
 }
 
-// struct helpers
-
-// uint16_t getCo2() {
-//   lastReading a;
-//   return a.co2;
-// }
-// float getTemp() {
-//   lastReading a;
-//   return a.temp;
-// }
-// float getHumidity() {
-//   lastReading a;
-//   return a.humidity;
-// }
-
 void setup(void) {
   Serial.begin(115200);
   Serial.println("");
-  // prep D8 LED
-  pinMode(LED_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT); // prep D8 LED
 
   // start SCD30 sensor
   Wire.begin(D3, D6);
@@ -220,36 +186,31 @@ void setup(void) {
     while (1);
   }
 
-  // tell SCD30 our altitude
-  airSensor.setAltitudeCompensation(ALTITUDE_ABOVE_SEA);
+  airSensor.setAltitudeCompensation(ALTITUDE_ABOVE_SEA); // tell SCD30 our altitude
 
+  // print various sensor information
   Serial.print("Auto calibration set to: ");
-  if (airSensor.getAutoSelfCalibration() == true)
-      Serial.println("true");
-  else
-      Serial.println("false");
+  if (airSensor.getAutoSelfCalibration() == true) {
+    Serial.println("true");
+  } else {
+    Serial.println("false");
+  }
 
   int interval = airSensor.getMeasurementInterval();
-  Serial.print("Measurement Interval: ");
-  Serial.println(interval);
+  Serial.print("Measurement Interval: "); Serial.println(interval);
 
   unsigned int altitude = airSensor.getAltitudeCompensation();
-  Serial.print("Current altitude: ");
-  Serial.print(altitude);
-  Serial.println("m");
+  Serial.print("Current altitude: "); Serial.print(altitude); Serial.println("m");
 
   float offset = airSensor.getTemperatureOffset();
-  Serial.print("Current temp offset: ");
-  Serial.print(offset, 2);
-  Serial.println(" C");
+  Serial.print("Current temp offset: "); Serial.print(offset, 2); Serial.println(" C");
 
   // start filesystem
   if (!SPIFFS.begin()) {
     Serial.println("SPIFFS initialisation failed!");
-    while (1) yield(); // Stay here twiddling thumbs waiting
+    while (1) yield();
   }
 
-  // load fonts
   bool font_missing = false;
   if (SPIFFS.exists("/fonts/NotoSansBold15.vlw")    == false) font_missing = true;
   if (SPIFFS.exists("/fonts/NotoSansBold36.vlw")    == false) font_missing = true;
@@ -276,21 +237,21 @@ void setup(void) {
   // draw static graph elements
   tft.drawLine(GRAPH_BEG_X, GRAPH_BEG_Y, GRAPH_BEG_X, GRAPH_END_Y, TFT_LIGHTGREY);
   tft.drawLine(GRAPH_END_X, GRAPH_BEG_Y, GRAPH_END_X, GRAPH_END_Y, TFT_LIGHTGREY);
-  // draw the labels
+  // draw labels
   tft.loadFont(AA_FONT_SMALL);
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
-
+  // 2k
   tft.setCursor(4, 41);
   tft.println("2k");
-  tft.drawLine(GRAPH_BEG_X-2, GRAPH_BEG_Y, GRAPH_BEG_X, GRAPH_BEG_Y, TFT_LIGHTGREY); // 2k
-
+  tft.drawLine(GRAPH_BEG_X-2, GRAPH_BEG_Y, GRAPH_BEG_X, GRAPH_BEG_Y, TFT_LIGHTGREY);
+  // 1k
   tft.setCursor(4, 66);
   tft.println("1k");
-  tft.drawLine(GRAPH_BEG_X-2, 73, GRAPH_BEG_X, 73, TFT_LIGHTGREY); // 1k
-
+  tft.drawLine(GRAPH_BEG_X-2, 73, GRAPH_BEG_X, 73, TFT_LIGHTGREY);
+  // 0
   tft.setCursor(12, 92);
   tft.println("0");
-  tft.drawLine(GRAPH_BEG_X-2, GRAPH_END_Y, GRAPH_BEG_X, GRAPH_END_Y, TFT_LIGHTGREY); // 0
+  tft.drawLine(GRAPH_BEG_X-2, GRAPH_END_Y, GRAPH_BEG_X, GRAPH_END_Y, TFT_LIGHTGREY);
 
   tft.unloadFont();
 
@@ -342,23 +303,20 @@ void setup(void) {
     request->send(response);
   });
 
+  server.onNotFound([](AsyncWebServerRequest *request) {
+    request->send(404, "text/plain", "Not found");
+  });
+
   // start HTTP server
-  server.onNotFound(notFound);
   server.begin();
 }
 
-unsigned long timeRun = 0L;
-unsigned long MinuteCounter = (60*1000L);
-int xpos = 65; // half the screen width
-int ypos = 4;
+unsigned long timeRun = 0L; // for graph timer
+unsigned long MinuteCounter = (60*1000L); // for graph timer
 bool firstRead = true;
 char co2StringBuffer[14];
-
 void loop() {
-  //drawDatumMarker(xpos, ypos);
-
-  // check if, and update when, new sensor values are available
-  updateReadings();
+  updateReadings(); // check if, and update when, new sensor values are available
 
   tft.loadFont(AA_FONT_LARGE); // Must load the font first
   tft.setTextDatum(TC_DATUM); // Top centre
@@ -372,12 +330,11 @@ void loop() {
   } else {
     tft.setTextColor(TFT_WHITE, TFT_BLACK);
   }
-  // do processing to turn into string with commas
-  tft.drawString(ultoa(lastCo2, co2StringBuffer), xpos, ypos);
+  // convert uint into string with "," on >=1000
+  tft.drawString(ultoa(lastCo2, co2StringBuffer), 65, 4); // x-axis: 65 (half of 130px), y-axis: 4 (any lower and the text padding crops the top of the "2k")
   tft.unloadFont();
 
-  // to get the first graph dotpoint without having to wait a minute
-  if (firstRead) {
+  if (firstRead) { // to get the first graph dotpoint without having to wait a minute
     updGraph(lastCo2);
     firstRead = false;
   }
@@ -386,7 +343,6 @@ void loop() {
   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour so the anti-aliasing works
   tft.setTextDatum(TL_DATUM); // Top left
   tft.setTextPadding(2);
-
   // Temp
   tft.drawFloat(lastTemp, 1, 22, 112); tft.print(" °C");
   // Humidity
@@ -397,14 +353,12 @@ void loop() {
   // for serial plotter
   //Serial.println(lastCo2);
 
-  // update graph every 1 min
-  if (millis() - timeRun >= MinuteCounter) {
+  if (millis() - timeRun >= MinuteCounter) { // update graph every 1 min
     timeRun += MinuteCounter;
     updGraph(lastCo2);
   }
 
-  // determine whether LED should be on/off
-  if (lastCo2 >= LED_ALARM) {
+  if (lastCo2 >= LED_ALARM) { // determine whether LED should be on/off
     if (!ledAlarm.IsRunning()) {
       ledAlarm.Reset();
     }
@@ -413,6 +367,5 @@ void loop() {
     ledAlarm.Stop();
   }
 
-  // run mDNS service
-  MDNS.update();
+  MDNS.update(); // run mDNS service
 }

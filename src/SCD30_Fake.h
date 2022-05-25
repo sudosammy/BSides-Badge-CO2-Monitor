@@ -1,4 +1,12 @@
+/*
 
+A quick and dirty mock-up of the SCD30 SparkFun library.
+It does not fully implement any functions but returns success responses and (where applicable) mock data.
+This can be used to seed "random" data for the gadget to perform dry-runs without the sensor attached or test UI elements.
+
+Activate this library wiith the "FAKE_SENSOR" setting.
+
+*/
 #include "Arduino.h"
 #include <Wire.h>
 
