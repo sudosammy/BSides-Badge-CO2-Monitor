@@ -32,7 +32,6 @@
 #include "settings.h"
 
 #define LED_PIN D8
-#define ONBOARD_LED 2
 #define AA_FONT_SMALL "fonts/NotoSansBold15"
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
 TFT_eSPI tft = TFT_eSPI();
@@ -180,7 +179,7 @@ void setup(void) {
   pinMode(LED_PIN, OUTPUT); // prep D8 LED
 
   // start SCD30 sensor
-  Wire.begin(D3, D6);
+  Wire.begin(SCD30_SDA, SCD30_SCL);
   if (!airSensor.begin()) {
     Serial.println("SCD30 not detected. Please check wiring. Freezing...");
     while (1);

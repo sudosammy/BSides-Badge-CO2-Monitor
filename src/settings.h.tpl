@@ -1,4 +1,4 @@
-// self-explanatory file
+// Self-explanatory file...
 #define ALTITUDE_ABOVE_SEA  17 // your altitude above sea level (int)
 
 #define ENABLE_WIFI         true
@@ -14,6 +14,10 @@
 #define PPM_ORANGE          1200
 #define PPM_RED             1600
 #define LED_ALARM           1800 // ppm that LED should illuminate
+
+// (Unlikely) If you wired your SCD30 sensor to different pins, edit here:
+#define SCD30_SDA           D3
+#define SCD30_SCL           D6
 
 /*
 If you're using the BSides Perth badge 2018 but *not*
