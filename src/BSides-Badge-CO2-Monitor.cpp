@@ -32,7 +32,7 @@
 #include <AsyncJson.h>
 #include <SimplyAtomic.h>
 
-// User configuration
+// User configurations
 #include "settings.h"
 
 #define LED_PIN D8
@@ -40,12 +40,11 @@
 #define AA_FONT_SMALL "fonts/NotoSansBold15"
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
 TFT_eSPI tft = TFT_eSPI();  // Invoke library, pins defined in Setup8_ILI9163_128x128.h
-
 #ifdef FAKE_SENSOR
-#include "SCD30_Fake.h"
-SCD30_Fake airSensor;
+  #include "SCD30_Fake.h"
+  SCD30_Fake airSensor;
 #else
-SCD30 airSensor;
+  SCD30 airSensor;
 #endif
 
 AsyncWebServer server(80);
@@ -386,8 +385,6 @@ bool firstRead = true;
 char co2StringBuffer[14];
 
 void loop() {
-  // stop internal LED from blinking
-  digitalWrite(ONBOARD_LED, HIGH);
   //drawDatumMarker(xpos, ypos);
 
   // check if, and update when, new sensor values are available
