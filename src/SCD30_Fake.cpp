@@ -146,8 +146,8 @@ uint16_t SCD30_Fake::getMeasurementInterval(void)
 }
 
 // Returns true when data is available
-int timeRun2 = 0;
-int counter2 = 2500; // we make our fake sensor a little slower
+unsigned long timeRun2 = 0;
+unsigned long counter2 = 2500; // we make our fake sensor a little slower
 bool SCD30_Fake::dataAvailable()
 {
   if (millis() - timeRun2 >= counter2) {
@@ -161,9 +161,9 @@ bool SCD30_Fake::dataAvailable()
 // Get 18 bytes from SCD30_Fake
 // Updates global variables with floats
 // Returns true if success
-float lastCo2F = 450;
-float lastTempF = 20;
-float lastHumidF = 50;
+int lastCo2F = 1000;
+float lastTempF = 20.00;
+float lastHumidF = 50.00;
 
 bool SCD30_Fake::readMeasurement()
 {
@@ -174,10 +174,9 @@ bool SCD30_Fake::readMeasurement()
   // }
     
   // make up data!!
-
   co2 = random(lastCo2F-50,lastCo2F+50);
-  temperature = (float)(random(lastTempF-2,lastTempF+2) + (float)(random(1,99)/100));
-  humidity = (float)(random(lastHumidF-10,lastHumidF+10) + (float)(random(1,99)/100));
+  temperature = (float)random(lastTempF-1,lastTempF+1)+(float)random(1,99)/100.0;
+  humidity = (float)random(lastTempF-1,lastTempF+1)+(float)random(1,99)/100.0;
 
   // Mark our global variables as fresh
   co2HasBeenReported = false;

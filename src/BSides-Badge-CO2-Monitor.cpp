@@ -32,20 +32,8 @@
 #include <AsyncJson.h>
 #include <SimplyAtomic.h>
 
-// User configurable
-#include "credentials.h"
-
-#define DEBUG true // toggle verbose serial output (bool)
-#define FAKE_SENSOR true // toggle fake sensor data
-#define ALTITUDE_ABOVE_SEA 17 // your altitude above sea level (int)
-
-#define PPM_YELLOW 800
-#define PPM_ORANGE 1200
-#define PPM_RED 1600
-#define LED_ALARM 1800 // ppm that LED should illuminate (int)
-
-#define ENABLE_WIFI true
-#define HOSTNAME "co2meter"
+// User configuration
+#include "settings.h"
 
 #define LED_PIN D8
 #define ONBOARD_LED 2
@@ -73,7 +61,7 @@ auto ledAlarm = JLed(LED_PIN).Breathe(250, 400, 250).DelayAfter(800).Repeat(5).M
 
 // Globals for storing the most recent measurements
 uint16_t lastCo2 = 0;
-float lastTemp, lastHumidity = 0;
+float lastTemp, lastHumidity = 0.00;
 
 //====================================================================================
 // This next function will be called during decoding of the jpeg file to
@@ -393,7 +381,7 @@ void setup(void) {
 unsigned long timeRun = 0L;
 unsigned long MinuteCounter = (60*1000L);
 int xpos = 65; // half the screen width
-int ypos = 5;
+int ypos = 4;
 bool firstRead = true;
 char co2StringBuffer[14];
 
@@ -430,16 +418,11 @@ void loop() {
   tft.loadFont(AA_FONT_SMALL); // Must load the font first
   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour so the anti-aliasing works
   tft.setTextDatum(TL_DATUM); // Top left
-  tft.setTextPadding(1);
+  tft.setTextPadding(2);
 
   // Temp
-  tft.drawFloat(lastTemp, 1, 22, 112);
-  //tft.setCursor(22, 112);
-  tft.print(" °C");
-
+  tft.drawFloat(lastTemp, 1, 22, 112); tft.print(" °C");
   // Humidity
-  // tft.setCursor(92, 112);
-  // tft.print(lastHumidity, 0);
   tft.drawFloat(lastHumidity, 0, 92, 112);
 
   tft.unloadFont();
