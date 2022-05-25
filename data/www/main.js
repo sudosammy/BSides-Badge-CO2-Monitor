@@ -81,19 +81,16 @@ getHumidityData();
 
 // Thanks: https://github.com/melkati/CO2-Gadget
 setInterval(function () {
-  // Call a function repetatively with 5 Second interval
   getCO2Data();
-}, 5000); // 5000mS  update rate
+}, 5000); // 5S  update rate
 
 setInterval(function () {
-  // Call a function repetatively with 30 Second interval
   getTemperatureData();
-}, 30000); // 30000mS  update rate
+}, 30000); // 30S  update rate
 
 setInterval(function () {
-  // Call a function repetatively with 30 Second interval
   getHumidityData();
-}, 30000); // 30000mS  update rate
+}, 30000); // 30S  update rate
 
 function getCO2Data() {
   var xhttp = new XMLHttpRequest();
@@ -103,6 +100,8 @@ function getCO2Data() {
     }
   };
   xhttp.open("GET", "/co2", true);
+  xhttp.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+  xhttp.setRequestHeader("Pragma", "no-cache");
   xhttp.send();
 }
 
@@ -114,6 +113,8 @@ function getTemperatureData() {
     }
   };
   xhttp.open("GET", "/temp", true);
+  xhttp.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+  xhttp.setRequestHeader("Pragma", "no-cache");
   xhttp.send();
 }
 
@@ -125,5 +126,7 @@ function getHumidityData() {
     }
   };
   xhttp.open("GET", "/humidity", true);
+  xhttp.setRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+  xhttp.setRequestHeader("Pragma", "no-cache");
   xhttp.send();
 }
