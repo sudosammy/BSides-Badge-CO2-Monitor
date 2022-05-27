@@ -1,13 +1,16 @@
 // Self-explanatory file...
-#define ALTITUDE_ABOVE_SEA  17 // your altitude above sea level (int)
+#define ALTITUDE_ABOVE_SEA  17 // in metres (int)
 
 #define ENABLE_WIFI         true
-#define HOSTNAME            "co2meter" // hostname for mDNS
 #define WIFI_SSID           "MySSID"
 #define WIFI_PW             "123456789"
+#define HOSTNAME            "co2meter" // hostname for mDNS
+
+// --------------- Unlikely you need to edit below here --------------- */
 
 #define DEBUG               false // toggle verbose serial output (bool)
-#define FAKE_SENSOR         false // toggle fake sensor data (bool)
+#define FAKE_SENSOR         false // toggle fake sensor data & increase reads/minute (bool)
+#define NTP_SERVER          "pool.ntp.org" // NTP server to use
 
 // CO2 parts per million that should trigger change in display/graph colours
 #define PPM_YELLOW          800
@@ -15,7 +18,7 @@
 #define PPM_RED             1600
 #define LED_ALARM           1800 // ppm that LED should illuminate
 
-// (Unlikely) If you wired your SCD30 sensor to different pins, edit here:
+// If you wired your SCD30 sensor to different pins, edit here:
 #define SCD30_SDA           D3
 #define SCD30_SCL           D6
 

@@ -1,4 +1,3 @@
-
 var gauge1 = Gauge(
   document.getElementById("gauge1"), {
     max: 2500,
@@ -82,15 +81,15 @@ getHumidityData();
 // Thanks: https://github.com/melkati/CO2-Gadget
 setInterval(function () {
   getCO2Data();
-}, 5000); // 5S  update rate
+}, 5000); // 5s update rate
 
 setInterval(function () {
   getTemperatureData();
-}, 30000); // 30S  update rate
+}, 30000); // 30s update rate
 
 setInterval(function () {
   getHumidityData();
-}, 30000); // 30S  update rate
+}, 30000); // 30s update rate
 
 function getCO2Data() {
   var xhttp = new XMLHttpRequest();
@@ -130,3 +129,22 @@ function getHumidityData() {
   xhttp.setRequestHeader("Pragma", "no-cache");
   xhttp.send();
 }
+
+// datatables
+$(document).ready(function () {
+  var table = $('#co2table').DataTable({
+    "ajax": {
+      "url": "/table",
+      "dataSrc": "data"
+    },
+    stateSave: true,
+    dom: 'Bfrtip',
+    buttons: [
+      'copy', 'csv'
+    ]
+  });
+
+  setInterval( function () {
+    table.ajax.reload( null, false ); // user paging is not reset on reload
+  }, 60000); // 60s update rate
+});

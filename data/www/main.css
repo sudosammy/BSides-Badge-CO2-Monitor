@@ -1,10 +1,15 @@
 body {
   background-color: rgba(0,0,0,0.8);
-  color: #999;
+  color: rgb(216, 216, 216);
   font-family: Hevletica, sans-serif;
-  width: 98%;
+  
+}
+
+.center-gauges {
+  width: 100%;
   display: flex;
   justify-content: center;
+  margin-bottom: 50px;
 }
 
 .gauge-container {

@@ -21,6 +21,7 @@
 #include <CircularBuffer.h>
 #include <jled.h>
 #include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ESP8266mDNS.h>
@@ -32,12 +33,16 @@
 #include "settings.h"
 
 #define LED_PIN D8
+#define ONE_HOUR 3600000UL
+
 #define AA_FONT_SMALL "fonts/NotoSansBold15"
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
 TFT_eSPI tft = TFT_eSPI();
+WiFiUDP UDP;
 #ifdef FAKE_SENSOR
   #include "SCD30_Fake.h"
   SCD30_Fake airSensor;
+  unsigned long MinuteCounter = (5*1000L); // Also make time go faster
 #else
   SCD30 airSensor;
 #endif
@@ -56,6 +61,10 @@ auto ledAlarm = JLed(LED_PIN).Breathe(250, 400, 250).DelayAfter(800).Repeat(5).M
 // Globals for storing the most recent measurements
 uint16_t lastCo2 = 0;
 float lastTemp, lastHumidity = 0.00;
+
+IPAddress timeServerIP;
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE]; // A buffer to hold incoming and outgoing packets
 
 //====================================================================================
 // This next function will be called during decoding of the jpeg file to
@@ -83,7 +92,7 @@ int getYOffset(uint16_t co2) {
 
 CircularBuffer<uint16_t,(GRAPH_END_X-GRAPH_BEG_X-1)> measurement; // we -1 to not clash with our end x axis line
 void updGraph(uint16_t co2) {
-  if (DEBUG) { Serial.println("Updating graph data"); }
+  if (DEBUG) { Serial.println("Updating TFT graph data"); }
   // take the most current co2 reading and push to CircularBuffer
   measurement.push(co2);
 
@@ -106,6 +115,29 @@ void updGraph(uint16_t co2) {
       tft.drawLine(xValue, yValue, xValue, yValue, TFT_WHITE);
     }
   }
+}
+
+CircularBuffer<uint32_t,120> timeBuffer; // 180 entries = 3 hours
+CircularBuffer<uint16_t,120> co2Buffer;
+CircularBuffer<float,120> tempBuffer;
+CircularBuffer<float,120> humidityBuffer;
+DynamicJsonDocument json(9920); // 4096 bytes = 51 minutes (9920 = 2 hours)
+char* bigJSON = new char[9920];
+void updTable(uint32_t time, uint16_t co2, float temp, float humidity) {
+  if (DEBUG) { Serial.println("Updating table data"); }
+  timeBuffer.push(time);
+  co2Buffer.push(co2);
+  tempBuffer.push(temp);
+  humidityBuffer.push(humidity);
+
+  for (int i=0; i<timeBuffer.size(); i++) {
+    json["data"][i][0] = timeBuffer[i];
+    json["data"][i][1] = co2Buffer[i];
+    json["data"][i][2] = tempBuffer[i];
+    json["data"][i][3] = humidityBuffer[i];
+  }
+
+  serializeJson(json, bigJSON, measureJson(json));
 }
 
 // Thanks: https://arduino.stackexchange.com/questions/28603/the-most-effective-way-to-format-numbers-on-arduino
@@ -172,6 +204,50 @@ void updateReadings() {
     //if (DEBUG) { Serial.printf("\nCurrent lastReading values: %i, %.2f, %.2f\n", lastCo2, lastTemp, lastHumidity); }
   }
 }
+
+unsigned long getTime() { // Check if the time server has responded, if so, get the UNIX time, otherwise, return 0
+  if (UDP.parsePacket() == 0) { // If there's no response (yet)
+    return 0;
+  }
+  UDP.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
+  // Combine the 4 timestamp bytes into one 32-bit number
+  uint32_t NTPTime = (packetBuffer[40] << 24) | (packetBuffer[41] << 16) | (packetBuffer[42] << 8) | packetBuffer[43];
+  // Convert NTP time to a UNIX timestamp:
+  // Unix time starts on Jan 1 1970. That's 2208988800 seconds in NTP time:
+  const uint32_t seventyYears = 2208988800UL;
+  uint32_t UNIXTime = NTPTime - seventyYears; // subtract seventy years
+  return UNIXTime;
+}
+
+void sendNTPpacket(IPAddress& address) {
+  if (DEBUG) { Serial.println("Sending NTP request"); }
+  memset(packetBuffer, 0, NTP_PACKET_SIZE);  // set all bytes in the buffer to 0
+  
+  packetBuffer[0] = 0b11100011; // Initialize values needed to form NTP request (LI, Version, Mode)
+  UDP.beginPacket(address, 123);
+  UDP.write(packetBuffer, NTP_PACKET_SIZE);
+  UDP.endPacket();
+}
+
+int getJSONChunk(char *buffer, int maxLen, size_t index) {
+  //Write up to "maxLen" bytes into "buffer" and return the amount written.
+  //index equals the amount of bytes that has been already sent
+  //You will be asked for more data until 0 is returned
+  int sizeBigJSON = measureJson(json);
+  size_t max = (ESP.getFreeHeap() / 3) & 0xFFE0;
+  // Get the chunk based on the index and maxLen
+  size_t len = sizeBigJSON - index;
+  if (len > maxLen) len = maxLen;
+  if (len > max) len = max;
+  if (len > 0) {
+    if (DEBUG) { Serial.printf("Adding %i bytes to buffer\n", len); }
+    memcpy(buffer, bigJSON + index, len);
+  }
+  if (len == 0) {
+    if (DEBUG) { Serial.println("Complete buffer sent."); }
+  }
+  return len; // Return the actual length of the chunk (0 for end of file)
+};
 
 void setup(void) {
   Serial.begin(115200);
@@ -293,12 +369,23 @@ void setup(void) {
 
   server.on("/api", HTTP_GET, [](AsyncWebServerRequest *request) {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-    DynamicJsonDocument json(1024);
+    DynamicJsonDocument json(128);
     json["heap"] = ESP.getFreeHeap();
     json["co2"] = lastCo2;
     json["temp"] = lastTemp;
     json["humidity"] = lastHumidity;
     serializeJson(json, *response);
+    response->addHeader("Cache-Control", "no-cache");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+  });
+
+  server.on("/table", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncWebServerResponse *response = request->beginChunkedResponse("application/json", [](uint8_t *buffer, size_t maxLen, size_t index) -> size_t {
+      return getJSONChunk((char *)buffer, (int)maxLen, index);
+    });
+    response->addHeader("Cache-Control", "max-age=60, must-revalidate");
+    response->addHeader("Access-Control-Allow-Origin", "*");
     request->send(response);
   });
 
@@ -308,13 +395,25 @@ void setup(void) {
 
   // start HTTP server
   server.begin();
+
+  // send for an NTP packet
+  UDP.begin(123);
+  WiFi.hostByName(NTP_SERVER, timeServerIP); // Get the IP address of the NTP server
+  sendNTPpacket(timeServerIP);
 }
 
 unsigned long timeRun = 0L; // for graph timer
+#ifndef FAKE_SENSOR
 unsigned long MinuteCounter = (60*1000L); // for graph timer
+#endif
+unsigned long prevNTP = 0; // for NTP timer
+unsigned long lastNTPResponse = 0; // for NTP timer
+uint32_t timeUNIX = 0; // the most recent timestamp we received from the NTP server
 bool firstRead = true;
 char co2StringBuffer[14];
+
 void loop() {
+  unsigned long currentMillis = millis();
   updateReadings(); // check if, and update when, new sensor values are available
 
   tft.loadFont(AA_FONT_LARGE); // Must load the font first
@@ -346,15 +445,30 @@ void loop() {
   tft.drawFloat(lastTemp, 1, 22, 112); tft.print(" °C");
   // Humidity
   tft.drawFloat(lastHumidity, 0, 92, 112);
-
   tft.unloadFont();
 
   // for serial plotter
   //Serial.println(lastCo2);
 
-  if (millis() - timeRun >= MinuteCounter) { // update graph every 1 min
+  if (currentMillis - prevNTP > (ONE_HOUR * 2UL)) { // Request the time from the time server every two hours
+    prevNTP = currentMillis;
+    sendNTPpacket(timeServerIP);
+  }
+
+  uint32_t time = getTime(); // Check if the time server has responded, if so, get the UNIX time
+  if (time) {
+    timeUNIX = time;
+    if (DEBUG) { Serial.print("NTP response: "); Serial.println(timeUNIX); }
+    lastNTPResponse = millis();
+  } else if ((millis() - lastNTPResponse) > 24UL * ONE_HOUR) {
+    Serial.println("More than 24 hours since last NTP response!");
+  }
+
+  if (currentMillis - timeRun >= MinuteCounter) { // update graph & table every 1 min
     timeRun += MinuteCounter;
     updGraph(lastCo2);
+    uint32_t actualTime = timeUNIX + (currentMillis - lastNTPResponse) / 1000;
+    updTable(actualTime, lastCo2, lastTemp, lastHumidity);
   }
 
   if (lastCo2 >= LED_ALARM) { // determine whether LED should be on/off
