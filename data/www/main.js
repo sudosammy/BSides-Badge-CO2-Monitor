@@ -145,6 +145,6 @@ $(document).ready(function () {
   });
 
   setInterval( function () {
-    table.ajax.reload( null, false ); // user paging is not reset on reload
+    table.ajax.reload();
   }, 60000); // 60s update rate
 });

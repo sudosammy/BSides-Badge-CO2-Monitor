@@ -1,10 +1,11 @@
 // Self-explanatory file...
 #define ALTITUDE_ABOVE_SEA  17 // in metres (int)
+#define TIMEZONE            "AWST-8" // as specified here: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
 
 #define ENABLE_WIFI         true
 #define WIFI_SSID           "MySSID"
 #define WIFI_PW             "123456789"
-#define HOSTNAME            "co2meter" // hostname for mDNS
+#define HOSTNAME            "co2meter" // hostname for mDNS 
 
 // --------------- Unlikely you need to edit below here --------------- */
 

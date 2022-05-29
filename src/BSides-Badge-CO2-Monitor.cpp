@@ -28,6 +28,7 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <SimplyAtomic.h>
+#include <time.h>
 
 // User configurations
 #include "settings.h"
@@ -39,10 +40,9 @@
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
 TFT_eSPI tft = TFT_eSPI();
 WiFiUDP UDP;
-#ifdef FAKE_SENSOR
+#if FAKE_SENSOR
   #include "SCD30_Fake.h"
   SCD30_Fake airSensor;
-  unsigned long MinuteCounter = (5*1000L); // Also make time go faster
 #else
   SCD30 airSensor;
 #endif
@@ -79,6 +79,12 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) 
   return 1;
 }
 //====================================================================================
+
+void setTimezone(String timezone){
+  if (DEBUG) { Serial.printf("Setting Timezone to %s\n",timezone.c_str()); }
+  setenv("TZ",timezone.c_str(),1);
+  tzset();
+}
 
 int getYOffset(uint16_t co2) {
   // take co2 value and determine the Y axis offset
@@ -249,6 +255,18 @@ int getJSONChunk(char *buffer, int maxLen, size_t index) {
   return len; // Return the actual length of the chunk (0 for end of file)
 };
 
+void tftSleep(uint32_t time) {
+  // use timezone offset
+  // test whether time currently is between the sleep time
+  // yes? turn off / keep turned off tft
+  // no? turn it on / keep it turned on
+
+  // struct tm new_ts;
+  // getLocalTime(&new_ts);
+  // Serial.print("Current time obtained from RTC after NTP config and WiFi off is: ");
+  // Serial.println(&new_ts, "%A, %B %d %Y %H:%M:%S");
+}
+
 void setup(void) {
   Serial.begin(115200);
   Serial.println("");
@@ -330,6 +348,10 @@ void setup(void) {
 
   tft.unloadFont();
 
+  // set timezone & configure NTP
+  setTimezone(TIMEZONE);
+  Serial.printf("Timezone set to: %s\n", TIMEZONE);
+
   // start Wi-Fi connection
   if (ENABLE_WIFI) {
     tft.loadFont(AA_FONT_SMALL);
@@ -403,8 +425,10 @@ void setup(void) {
 }
 
 unsigned long timeRun = 0L; // for graph timer
-#ifndef FAKE_SENSOR
+#if !FAKE_SENSOR
 unsigned long MinuteCounter = (60*1000L); // for graph timer
+#else
+unsigned long MinuteCounter = (5*1000L); // Also make time go faster
 #endif
 unsigned long prevNTP = 0; // for NTP timer
 unsigned long lastNTPResponse = 0; // for NTP timer
@@ -469,6 +493,8 @@ void loop() {
     updGraph(lastCo2);
     uint32_t actualTime = timeUNIX + (currentMillis - lastNTPResponse) / 1000;
     updTable(actualTime, lastCo2, lastTemp, lastHumidity);
+    // test whether TFT screen should be off/on
+    tftSleep(actualTime);
   }
 
   if (lastCo2 >= LED_ALARM) { // determine whether LED should be on/off
