@@ -228,7 +228,7 @@ unsigned long getTime() { // Check if the time server has responded, if so, get 
 void sendNTPpacket(IPAddress& address) {
   if (DEBUG) { Serial.println("Sending NTP request"); }
   memset(packetBuffer, 0, NTP_PACKET_SIZE);  // set all bytes in the buffer to 0
-  
+
   packetBuffer[0] = 0b11100011; // Initialize values needed to form NTP request (LI, Version, Mode)
   UDP.beginPacket(address, 123);
   UDP.write(packetBuffer, NTP_PACKET_SIZE);
@@ -271,32 +271,6 @@ void setup(void) {
   Serial.begin(115200);
   Serial.println("");
   pinMode(LED_PIN, OUTPUT); // prep D8 LED
-
-  // start SCD30 sensor
-  Wire.begin(SCD30_SDA, SCD30_SCL);
-  if (!airSensor.begin()) {
-    Serial.println("SCD30 not detected. Please check wiring. Freezing...");
-    while (1);
-  }
-
-  airSensor.setAltitudeCompensation(ALTITUDE_ABOVE_SEA); // tell SCD30 our altitude
-
-  // print various sensor information
-  Serial.print("Auto calibration set to: ");
-  if (airSensor.getAutoSelfCalibration() == true) {
-    Serial.println("true");
-  } else {
-    Serial.println("false");
-  }
-
-  int interval = airSensor.getMeasurementInterval();
-  Serial.print("Measurement Interval: "); Serial.println(interval);
-
-  unsigned int altitude = airSensor.getAltitudeCompensation();
-  Serial.print("Current altitude: "); Serial.print(altitude); Serial.println("m");
-
-  float offset = airSensor.getTemperatureOffset();
-  Serial.print("Current temp offset: "); Serial.print(offset, 2); Serial.println(" C");
 
   // start filesystem
   if (!SPIFFS.begin()) {
@@ -422,6 +396,32 @@ void setup(void) {
   UDP.begin(123);
   WiFi.hostByName(NTP_SERVER, timeServerIP); // Get the IP address of the NTP server
   sendNTPpacket(timeServerIP);
+
+  // start SCD30 sensor (it likes being last...)
+  Wire.begin(SCD30_SDA, SCD30_SCL);
+  if (!airSensor.begin()) {
+    Serial.println("SCD30 not detected. Please check wiring. Freezing...");
+    while (1);
+  }
+
+  airSensor.setAltitudeCompensation(ALTITUDE_ABOVE_SEA); // tell SCD30 our altitude
+
+  // print various sensor information
+  Serial.print("Auto calibration set to: ");
+  if (airSensor.getAutoSelfCalibration() == true) {
+    Serial.println("true");
+  } else {
+    Serial.println("false");
+  }
+
+  int interval = airSensor.getMeasurementInterval();
+  Serial.print("Measurement Interval: "); Serial.println(interval);
+
+  unsigned int altitude = airSensor.getAltitudeCompensation();
+  Serial.print("Current altitude: "); Serial.print(altitude); Serial.println("m");
+
+  float offset = airSensor.getTemperatureOffset();
+  Serial.print("Current temp offset: "); Serial.print(offset, 2); Serial.println(" C");
 }
 
 unsigned long timeRun = 0L; // for graph timer
@@ -507,4 +507,5 @@ void loop() {
   }
 
   MDNS.update(); // run mDNS service
+  delay(500); // this is needed or SCD30 spits the dummy
 }
