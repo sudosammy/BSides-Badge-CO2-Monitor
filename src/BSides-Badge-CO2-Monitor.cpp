@@ -56,7 +56,7 @@ AsyncWebServer server(80);
 
 // Define LED function when in alarm state
 // LED will fade-on in 250ms, stay on for 400ms, and fade-off in 250ms. Brightness is capped to 50/255
-auto ledAlarm = JLed(LED_PIN).Breathe(250, 400, 250).DelayAfter(800).Repeat(5).MaxBrightness(50);
+auto ledAlarm = JLed(LED_PIN).Breathe(250, 400, 250).DelayAfter(800).Repeat(1).MaxBrightness(50);
 
 // Globals for storing the most recent measurements
 uint16_t lastCo2 = 0;
@@ -464,7 +464,7 @@ void loop() {
   tft.loadFont(AA_FONT_SMALL); // Must load the font first
   tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour so the anti-aliasing works
   tft.setTextDatum(TL_DATUM); // Top left
-  tft.setTextPadding(2);
+  tft.setTextPadding(20);
   // Temp
   tft.drawFloat(lastTemp, 1, 22, 112); tft.print(" °C");
   // Humidity
