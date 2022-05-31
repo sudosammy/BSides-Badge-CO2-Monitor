@@ -28,7 +28,6 @@
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
 #include <SimplyAtomic.h>
-#include <time.h>
 
 // User configurations
 #include "settings.h"
@@ -55,8 +54,8 @@ AsyncWebServer server(80);
 #define GRAPH_END_Y 98
 
 // Define LED function when in alarm state
-// LED will fade-on in 250ms, stay on for 400ms, and fade-off in 250ms. Brightness is capped to 50/255
-auto ledAlarm = JLed(LED_PIN).Breathe(250, 400, 250).DelayAfter(800).Repeat(1).MaxBrightness(50);
+// LED will fade-on in 150ms, stay on for 400ms, and fade-off in 150ms. Brightness is capped to 50/255
+auto ledAlarm = JLed(LED_PIN).Breathe(150, 400, 150).Repeat(1).MaxBrightness(50);
 
 // Globals for storing the most recent measurements
 uint16_t lastCo2 = 0;
@@ -211,18 +210,17 @@ void updateReadings() {
   }
 }
 
-unsigned long getTime() { // Check if the time server has responded, if so, get the UNIX time, otherwise, return 0
+time_t getTime() { // Check if the time server has responded, if so, get the UNIX time, otherwise, return 0
   if (UDP.parsePacket() == 0) { // If there's no response (yet)
     return 0;
   }
   UDP.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
   // Combine the 4 timestamp bytes into one 32-bit number
-  uint32_t NTPTime = (packetBuffer[40] << 24) | (packetBuffer[41] << 16) | (packetBuffer[42] << 8) | packetBuffer[43];
+  time_t NTPTime = (packetBuffer[40] << 24) | (packetBuffer[41] << 16) | (packetBuffer[42] << 8) | packetBuffer[43];
   // Convert NTP time to a UNIX timestamp:
   // Unix time starts on Jan 1 1970. That's 2208988800 seconds in NTP time:
   const uint32_t seventyYears = 2208988800UL;
-  uint32_t UNIXTime = NTPTime - seventyYears; // subtract seventy years
-  return UNIXTime;
+  return (NTPTime - seventyYears); // subtract seventy years
 }
 
 void sendNTPpacket(IPAddress& address) {
@@ -255,7 +253,12 @@ int getJSONChunk(char *buffer, int maxLen, size_t index) {
   return len; // Return the actual length of the chunk (0 for end of file)
 };
 
-void tftSleep(uint32_t time) {
+void tftSleep(time_t t) {
+  time_t curr_time;
+	curr_time = time(NULL);
+	tm *tm_local = localtime(&curr_time);
+  printf ("Current local time and date: %s", asctime(tm_local));
+
   // use timezone offset
   // test whether time currently is between the sleep time
   // yes? turn off / keep turned off tft
@@ -479,7 +482,7 @@ void loop() {
     sendNTPpacket(timeServerIP);
   }
 
-  uint32_t time = getTime(); // Check if the time server has responded, if so, get the UNIX time
+  time_t time = getTime(); // Check if the time server has responded, if so, get the UNIX time
   if (time) {
     timeUNIX = time;
     if (DEBUG) { Serial.print("NTP response: "); Serial.println(timeUNIX); }
@@ -491,7 +494,7 @@ void loop() {
   if (currentMillis - timeRun >= MinuteCounter) { // update graph & table every 1 min
     timeRun += MinuteCounter;
     updGraph(lastCo2);
-    uint32_t actualTime = timeUNIX + (currentMillis - lastNTPResponse) / 1000;
+    time_t actualTime = timeUNIX + (currentMillis - lastNTPResponse) / 1000;
     updTable(actualTime, lastCo2, lastTemp, lastHumidity);
     // test whether TFT screen should be off/on
     tftSleep(actualTime);
@@ -507,5 +510,5 @@ void loop() {
   }
 
   MDNS.update(); // run mDNS service
-  delay(500); // this is needed or SCD30 spits the dummy
+  delay(1000); // this is needed or SCD30 spits the dummy
 }
