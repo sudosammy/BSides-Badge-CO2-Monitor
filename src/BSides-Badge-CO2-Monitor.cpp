@@ -27,7 +27,6 @@
 #include <ESP8266mDNS.h>
 #include <ArduinoJson.h>
 #include <AsyncJson.h>
-#include <SimplyAtomic.h>
 
 // User configurations
 #include "settings.h"
@@ -189,15 +188,11 @@ void initWiFi() {
 
 void updateReadings() {
   if (airSensor.dataAvailable()) { // check if update available
-    ATOMIC() {
-      // so i'm not 100% whether this need to be atomic but my reasoning behind doing this is
-      // the webserver is async (apparently) and as such HTTP responses that require data from the
-      // lastReading struct may occur at the same time as the MCU is performing this line right here
-      // by making this atomic I am hoping that it can complete without any interupts that try to read the lastReading struct
-      lastCo2 = airSensor.getCO2();
-      lastTemp = airSensor.getTemperature();
-      lastHumidity = airSensor.getHumidity();
-    }
+    // so i thought this was going to need to be atomic/async safe to avoid race conditions
+    // but it turns out trying to do that causes way more problems lol
+    lastCo2 = airSensor.getCO2();
+    lastTemp = airSensor.getTemperature();
+    lastHumidity = airSensor.getHumidity();
   } else {
     if (lastCo2 == 0) {
       Serial.println("A call to updateReadings() was made before the senor had populated the lastReading struct...");
@@ -230,10 +225,10 @@ void tftSleep() {
   time_t curr_time;
 	curr_time = time(NULL);
 	tm *tm_local = localtime(&curr_time);
-  printf ("Current local time and date: %s", asctime(tm_local));
+  if (DEBUG) { printf ("Local time and date: %s", asctime(tm_local)); }
 
-  // use timezone offset
-  // test whether time currently is between the sleep time
+
+
   // yes? turn off / keep turned off tft
   // no? turn it on / keep it turned on
 
