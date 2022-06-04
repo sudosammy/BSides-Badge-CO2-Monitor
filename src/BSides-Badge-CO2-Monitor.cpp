@@ -61,10 +61,6 @@ auto ledAlarm = JLed(LED_PIN).Breathe(150, 400, 150).Repeat(1).MaxBrightness(50)
 uint16_t lastCo2 = 0;
 float lastTemp, lastHumidity = 0.00;
 
-IPAddress timeServerIP;
-const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
-byte packetBuffer[NTP_PACKET_SIZE]; // A buffer to hold incoming and outgoing packets
-
 //====================================================================================
 // This next function will be called during decoding of the jpeg file to
 // render each block to the TFT.  If you use a different TFT library
@@ -122,15 +118,15 @@ void updGraph(uint16_t co2) {
   }
 }
 
-CircularBuffer<uint32_t,120> timeBuffer; // 180 entries = 3 hours
+CircularBuffer<time_t,120> timeBuffer; // 180 entries = 3 hours
 CircularBuffer<uint16_t,120> co2Buffer;
 CircularBuffer<float,120> tempBuffer;
 CircularBuffer<float,120> humidityBuffer;
 DynamicJsonDocument json(9920); // 4096 bytes = 51 minutes (9920 = 2 hours)
 char* bigJSON = new char[9920];
-void updTable(uint32_t time, uint16_t co2, float temp, float humidity) {
+void updTable(uint16_t co2, float temp, float humidity) {
   if (DEBUG) { Serial.println("Updating table data"); }
-  timeBuffer.push(time);
+  timeBuffer.push(time(NULL));
   co2Buffer.push(co2);
   tempBuffer.push(temp);
   humidityBuffer.push(humidity);
@@ -210,29 +206,6 @@ void updateReadings() {
   }
 }
 
-time_t getTime() { // Check if the time server has responded, if so, get the UNIX time, otherwise, return 0
-  if (UDP.parsePacket() == 0) { // If there's no response (yet)
-    return 0;
-  }
-  UDP.read(packetBuffer, NTP_PACKET_SIZE); // read the packet into the buffer
-  // Combine the 4 timestamp bytes into one 32-bit number
-  time_t NTPTime = (packetBuffer[40] << 24) | (packetBuffer[41] << 16) | (packetBuffer[42] << 8) | packetBuffer[43];
-  // Convert NTP time to a UNIX timestamp:
-  // Unix time starts on Jan 1 1970. That's 2208988800 seconds in NTP time:
-  const uint32_t seventyYears = 2208988800UL;
-  return (NTPTime - seventyYears); // subtract seventy years
-}
-
-void sendNTPpacket(IPAddress& address) {
-  if (DEBUG) { Serial.println("Sending NTP request"); }
-  memset(packetBuffer, 0, NTP_PACKET_SIZE);  // set all bytes in the buffer to 0
-
-  packetBuffer[0] = 0b11100011; // Initialize values needed to form NTP request (LI, Version, Mode)
-  UDP.beginPacket(address, 123);
-  UDP.write(packetBuffer, NTP_PACKET_SIZE);
-  UDP.endPacket();
-}
-
 int getJSONChunk(char *buffer, int maxLen, size_t index) {
   //Write up to "maxLen" bytes into "buffer" and return the amount written.
   //index equals the amount of bytes that has been already sent
@@ -253,7 +226,7 @@ int getJSONChunk(char *buffer, int maxLen, size_t index) {
   return len; // Return the actual length of the chunk (0 for end of file)
 };
 
-void tftSleep(time_t t) {
+void tftSleep() {
   time_t curr_time;
 	curr_time = time(NULL);
 	tm *tm_local = localtime(&curr_time);
@@ -325,10 +298,6 @@ void setup(void) {
 
   tft.unloadFont();
 
-  // set timezone & configure NTP
-  setTimezone(TIMEZONE);
-  Serial.printf("Timezone set to: %s\n", TIMEZONE);
-
   // start Wi-Fi connection
   if (ENABLE_WIFI) {
     tft.loadFont(AA_FONT_SMALL);
@@ -395,10 +364,10 @@ void setup(void) {
   // start HTTP server
   server.begin();
 
-  // send for an NTP packet
-  UDP.begin(123);
-  WiFi.hostByName(NTP_SERVER, timeServerIP); // Get the IP address of the NTP server
-  sendNTPpacket(timeServerIP);
+  // set timezone & configure NTP
+  configTime(0, 0, NTP_SERVER);
+  setTimezone(TIMEZONE);
+  Serial.printf("Timezone set to: %s\n", TIMEZONE);
 
   // start SCD30 sensor (it likes being last...)
   Wire.begin(SCD30_SDA, SCD30_SCL);
@@ -433,9 +402,6 @@ unsigned long MinuteCounter = (60*1000L); // for graph timer
 #else
 unsigned long MinuteCounter = (5*1000L); // Also make time go faster
 #endif
-unsigned long prevNTP = 0; // for NTP timer
-unsigned long lastNTPResponse = 0; // for NTP timer
-uint32_t timeUNIX = 0; // the most recent timestamp we received from the NTP server
 bool firstRead = true;
 char co2StringBuffer[14];
 
@@ -459,8 +425,9 @@ void loop() {
   tft.drawString(ultoa(lastCo2, co2StringBuffer), 65, 4); // x-axis: 65 (half of 130px), y-axis: 4 (any lower and the text padding crops the top of the "2k")
   tft.unloadFont();
 
-  if (firstRead) { // to get the first graph dotpoint without having to wait a minute
+  if (firstRead) { // to get the first graph/table plot without having to wait a minute
     updGraph(lastCo2);
+    updTable(lastCo2, lastTemp, lastHumidity);
     firstRead = false;
   }
 
@@ -477,27 +444,12 @@ void loop() {
   // for serial plotter
   //Serial.println(lastCo2);
 
-  if (currentMillis - prevNTP > (ONE_HOUR * 2UL)) { // Request the time from the time server every two hours
-    prevNTP = currentMillis;
-    sendNTPpacket(timeServerIP);
-  }
-
-  time_t time = getTime(); // Check if the time server has responded, if so, get the UNIX time
-  if (time) {
-    timeUNIX = time;
-    if (DEBUG) { Serial.print("NTP response: "); Serial.println(timeUNIX); }
-    lastNTPResponse = millis();
-  } else if ((millis() - lastNTPResponse) > 24UL * ONE_HOUR) {
-    Serial.println("More than 24 hours since last NTP response!");
-  }
-
   if (currentMillis - timeRun >= MinuteCounter) { // update graph & table every 1 min
     timeRun += MinuteCounter;
     updGraph(lastCo2);
-    time_t actualTime = timeUNIX + (currentMillis - lastNTPResponse) / 1000;
-    updTable(actualTime, lastCo2, lastTemp, lastHumidity);
+    updTable(lastCo2, lastTemp, lastHumidity);
     // test whether TFT screen should be off/on
-    tftSleep(actualTime);
+    tftSleep();
   }
 
   if (lastCo2 >= LED_ALARM) { // determine whether LED should be on/off
