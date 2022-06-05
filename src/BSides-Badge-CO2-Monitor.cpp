@@ -39,7 +39,7 @@
 TFT_eSPI tft = TFT_eSPI();
 WiFiUDP UDP;
 #if FAKE_SENSOR
-  #include "SCD30_Fake.h"
+  #include <SCD30_Fake.h>
   SCD30_Fake airSensor;
 #else
   SCD30 airSensor;
