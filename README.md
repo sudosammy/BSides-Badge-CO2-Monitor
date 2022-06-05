@@ -2,7 +2,7 @@
 
 A portable CO2, temperature, and humidity monitor with a WiFi-enabled dashboard, data logging & CSV export using the BSides Perth 2018 badge.
 
-This code is compatible with any ESP8266 microcontroller but some modifications will be necessary to convert it to another badge or board.
+This code is compatible with any ESP8266 microcontroller but some modifications will be necessary to convert it to another badge or TFT screen.
 
 ![CO2 Monitor sitting outside](github_pics/outside.jpg)
 
@@ -15,7 +15,7 @@ This code is compatible with any ESP8266 microcontroller but some modifications 
 * Uses primarily recycled goods!
 * Total cost ~$50 AUD
 
-What to buy:
+## What to buy:
 1. Sensirion [SCD30 sensor](https://www.aliexpress.com/item/1005001392172293.html) (this was the seller I used)
 2. [2x AA Battery holder w/ switch](https://www.jaycar.com.au/2aa-switched-battery-enclosure/p/PH9280)
 
