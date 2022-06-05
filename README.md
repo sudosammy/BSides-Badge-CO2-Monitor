@@ -16,7 +16,7 @@ This code is compatible with any ESP8266 microcontroller but some modifications 
 * Total cost ~$50 AUD
 
 What to buy:
-1. [SCD30 sensor](https://www.aliexpress.com/item/1005001392172293.html) (this was the seller I went with)
+1. Sensirion [SCD30 sensor](https://www.aliexpress.com/item/1005001392172293.html) (this was the seller I used)
 2. [2x AA Battery holder w/ switch](https://www.jaycar.com.au/2aa-switched-battery-enclosure/p/PH9280)
 
 It's assumed you have access to a small amount of copper wire, a soldering iron, and solder.
@@ -29,31 +29,31 @@ This schematic shows only the connections necessary to convert the BSides badge.
 
 ## Compiling:
 1. Install [PlatformIO](https://docs.platformio.org/en/latest/integration/ide/vscode.html#installation) for VSCode
-2. Clone this repository
-3. Open this project in VSCode
-4. Check out `settings.h.tpl`, complete, and rename to `settings.h`
-5. Build and upload the `Filesystem Image`
-6. Build and upload the project.
+2. Clone this repository and open it in VSCode
+3. Complete the details in `src/settings.h.tpl` and rename the file to `settings.h`
+    * You can set `FAKE_SENSOR` to true if you want to test this code without an SCD30. Note that the sample time for data logging is sped up in this mode.
+4. `Build Filesystem Image` and `Upload Filesystem Image` via the PlatformIO "Project Tasks"
+5. Build and upload the project to the NodeMCU board. There will be several warnings during compilation but hopefully no errors
+6. Power cycle the board to clear the TFT and ensure everything is working as expected
 
 ## Other notes:
-1. It works better on 5V so you might want to use a USB battery pack (like a portable phone charger) rather than running from AA batteries.
-2. TODO: It's undoubtedly possible to improve the amount of data logged by improving the efficiency of the CircularBuffers. Some ways I can think of that might work:
+1. It works (significantly) better on 5V so you might want to use a USB battery pack (like a portable phone charger) rather than running from AA batteries.
+2. TODO: It's possible to increase the amount of data logged by improving the efficiency of the CircularBuffers. Some possible changes:
     * Do not store the UNIX timestamp in the buffer. Store the UNIX time of the first reading as a global then use the size of the `CircularBuffer<uint16_t,120> co2Buffer;`, adding 60 seconds for each measurement.
     * Reuse the `CircularBuffer<uint16_t,120> co2Buffer;` for the TFT graph.
     * Store temp and humidity as two `uint8_t`'s (i.e. `uint8 + "." + uint8`) rather than 32bit floats. This reduces the precision from 6 decimal places to 3 but halves the RAM required.
 
 ## Battery Life
 
-On typical Duracell LR6 AA batteries, I was able to get >2 hours of good usage with WiFi enabled & connected. As the battery ran low the TFT backlight began flickering, the CO2 readings began to be suspiciously low, and eventually after `4 hours 23 minutes` the SCD30 stopped collecting data.
+On typical/uninteresting Duracell AA batteries (LR6) I got 2 hours of accurate data with WiFi enabled & connected. At 2.5 hours the TFT backlight was dimming and flickering slightly, the CO2 measurements were reading low (100-200ppm lower), and I lost confidence in their accuracy by 3.5 hours. Sometime later the SCD30 stopped collecting data. Methods of increasing battery lifespan:
+* Disable WiFi in the settings.
+* By default SCD30 takes measurements every 2 seconds. This is configurable up-to 30 minutes. Reduce the reading frequency and hence the number of refreshes of the TFT.
 
 ## Other Pics:
-
 ![CO2 Monitor inside](github_pics/inside.jpg)
 
-Necessary connections for SCD30 sensor:
-
+### Necessary connections for SCD30 sensor:
 ![CO2 Monitor image of back](github_pics/back.jpg)
 
-Web Application (it's mobile responsive too):
-
+### Web Application (it's mobile responsive too):
 ![CO2 Monitor web application](github_pics/dashboard.png)
