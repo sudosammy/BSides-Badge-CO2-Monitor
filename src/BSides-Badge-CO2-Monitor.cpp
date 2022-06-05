@@ -21,7 +21,6 @@
 #include <CircularBuffer.h>
 #include <jled.h>
 #include <ESP8266WiFi.h>
-#include <WiFiUdp.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 #include <ESP8266mDNS.h>
@@ -37,7 +36,7 @@
 #define AA_FONT_SMALL "fonts/NotoSansBold15"
 #define AA_FONT_LARGE "fonts/NotoSansBold36"
 TFT_eSPI tft = TFT_eSPI();
-WiFiUDP UDP;
+
 #if FAKE_SENSOR
   #include <SCD30_Fake.h>
   SCD30_Fake airSensor;
@@ -92,14 +91,11 @@ int getYOffset(uint16_t co2) {
 CircularBuffer<uint16_t,(GRAPH_END_X-GRAPH_BEG_X-1)> measurement; // we -1 to not clash with our end x axis line
 void updGraph(uint16_t co2) {
   if (DEBUG) { Serial.println("Updating TFT graph data"); }
-  // take the most current co2 reading and push to CircularBuffer
-  measurement.push(co2);
+  measurement.push(co2); // take the most current co2 reading and push to CircularBuffer
 
-  // clear TFT area before plotting
-  tft.fillRect(GRAPH_BEG_X+1, GRAPH_BEG_Y, (GRAPH_END_X-GRAPH_BEG_X-1), (GRAPH_END_Y-GRAPH_BEG_Y+1), TFT_BLACK);
+  tft.fillRect(GRAPH_BEG_X+1, GRAPH_BEG_Y, (GRAPH_END_X-GRAPH_BEG_X-1), (GRAPH_END_Y-GRAPH_BEG_Y+1), TFT_BLACK); // clear TFT area before plotting
 
-  // plot all values in CircularBuffer
-  for (int xOffset=0; xOffset<measurement.size(); xOffset++) {
+  for (int xOffset=0; xOffset<measurement.size(); xOffset++) { // plot all values in CircularBuffer
     uint16_t co2Value = measurement[xOffset];
     int xValue = GRAPH_BEG_X + 1 + xOffset; // we +1 here so that xValue doesn't clash with our x axis line
     int yValue = GRAPH_END_Y - getYOffset(co2Value);
@@ -140,17 +136,16 @@ void updTable(uint16_t co2, float temp, float humidity) {
 }
 
 // Thanks: https://arduino.stackexchange.com/questions/28603/the-most-effective-way-to-format-numbers-on-arduino
-char *ultoa(unsigned long val, char *s)
-{
-    char *p = s + 13;
-    *p = '\0';
-    do {
-        if ((p - s) % 4 == 2)
-            *--p = ',';
-        *--p = '0' + val % 10;
-        val /= 10;
-    } while (val);
-    return p;
+char *ultoa(unsigned long val, char *s) {
+  char *p = s + 13;
+  *p = '\0';
+  do {
+    if ((p - s) % 4 == 2)
+      *--p = ',';
+    *--p = '0' + val % 10;
+    val /= 10;
+  } while (val);
+  return p;
 }
 
 void initWiFi() {
@@ -188,7 +183,6 @@ void updateReadings() {
     if (lastCo2 == 0) {
       Serial.println("A call to updateReadings() was made before the senor had populated the lastReading struct...");
     }
-    //if (DEBUG) { Serial.printf("\nCurrent lastReading values: %i, %.2f, %.2f\n", lastCo2, lastTemp, lastHumidity); }
   }
 }
 
@@ -307,7 +301,7 @@ void setup(void) {
   }
 
   // start mDNS
-  if (MDNS.begin(HOSTNAME)) {
+  if (ENABLE_WIFI && MDNS.begin(HOSTNAME)) {
     MDNS.addService("http", "tcp", 80);
     Serial.printf("MDNS responder started: http://%s\n", HOSTNAME);
   }
@@ -361,9 +355,11 @@ void setup(void) {
   server.begin();
 
   // set timezone & configure NTP
-  configTime(0, 0, NTP_SERVER);
-  setTimezone(TIMEZONE);
-  Serial.printf("Timezone set to: %s\n", TIMEZONE);
+  if (ENABLE_WIFI) {
+    configTime(0, 0, NTP_SERVER);
+    setTimezone(TIMEZONE);
+    Serial.printf("Timezone set to: %s\n", TIMEZONE);
+  }
 
   // start SCD30 sensor (it likes being last...)
   Wire.begin(SCD30_SDA, SCD30_SCL);
@@ -456,6 +452,6 @@ void loop() {
     ledAlarm.Stop();
   }
 
-  MDNS.update(); // run mDNS service
+  if (ENABLE_WIFI) { MDNS.update(); }
   delay(1000); // this is needed or SCD30 spits the dummy
 }

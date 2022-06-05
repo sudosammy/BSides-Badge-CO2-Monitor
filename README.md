@@ -39,12 +39,12 @@ This schematic shows only the connections necessary to convert the BSides badge.
 2. TODO: It's possible to increase the amount of data logged by improving the efficiency of the CircularBuffers. Some possible changes:
     * Do not store the UNIX timestamp in the buffer. Store the UNIX time of the first reading as a global then use the size of the `CircularBuffer<uint16_t,120> co2Buffer;`, adding 60 seconds for each measurement.
     * Reuse the `CircularBuffer<uint16_t,120> co2Buffer;` for the TFT graph.
-    * Store temp and humidity as two `uint8_t`'s (i.e. `uint8 + "." + uint8`) rather than 32bit floats. This reduces the precision from 6 decimal places to 3 but halves the RAM required.
+    * Store temp and humidity as two `uint8_t`'s (i.e. `uint8 + "." + uint8`) rather than 32bit floats. This reduces the precision from 6 decimal places to 2 but halves the RAM required.
 
 ## Battery Life:
-On typical/uninteresting Duracell AA batteries (LR6) I got 2 hours of accurate data with WiFi enabled & connected. At 2.5 hours the TFT backlight was dimming and flickering slightly, the CO2 measurements were reading low (100-200ppm lower), and I lost confidence in their accuracy by 3.5 hours. Sometime later the SCD30 stopped collecting data. Methods of increasing battery lifespan:
+On typical/uninteresting Duracell AA batteries (LR6) I got 2 hours of accurate data with WiFi enabled & connected. At 2.5 hours the TFT backlight was dimming and flickering slightly and the CO2 measurements were reading a little low (100-200ppm lower) but it continued working for several hours. I suspect this is because SCD30 wants >=3.3V and that's pretty tough for two AA's. The sensor stopped reporting data just shy of 7 hours. Methods of increasing battery life:
 * Disable WiFi in the settings.
-* By default SCD30 takes measurements every 2 seconds. This is configurable up-to 30 minutes. Reduce the reading frequency and hence the number of refreshes of the TFT.
+* By default SCD30 takes measurements every 2 seconds. This is configurable up-to 30 minutes. Reduce the reading frequency and the number of refreshes of the TFT.
 
 ## Other Pics:
 ![CO2 Monitor inside](github_pics/inside.jpg)
