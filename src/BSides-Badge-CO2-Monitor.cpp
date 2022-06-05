@@ -75,7 +75,6 @@ bool tft_output(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) 
 //====================================================================================
 
 void setTimezone(String timezone){
-  if (DEBUG) { Serial.printf("Setting Timezone to %s\n",timezone.c_str()); }
   setenv("TZ",timezone.c_str(),1);
   tzset();
 }
@@ -141,14 +140,6 @@ void updTable(uint16_t co2, float temp, float humidity) {
 }
 
 // Thanks: https://arduino.stackexchange.com/questions/28603/the-most-effective-way-to-format-numbers-on-arduino
-/*
- * Format an unsigned long (32 bits) into a string in the format
- * "23,854,972".
- *
- * The provided buffer must be at least 14 bytes long. The number will
- * be right-adjusted in the buffer. Returns a pointer to the first
- * digit.
- */
 char *ultoa(unsigned long val, char *s)
 {
     char *p = s + 13;
@@ -221,21 +212,31 @@ int getJSONChunk(char *buffer, int maxLen, size_t index) {
   return len; // Return the actual length of the chunk (0 for end of file)
 };
 
+/*
+This function doesn't work because we can't (currently) control the backlight of the TFT screen
+on the BSides badge :( This function turns the whole screen white during the "off" period.
+
+It will require more investigation to determine whether we can utilise D0 to control the backlight.
+*/
+bool tftState = true; // true = on
 void tftSleep() {
-  time_t curr_time;
-	curr_time = time(NULL);
-	tm *tm_local = localtime(&curr_time);
-  if (DEBUG) { printf ("Local time and date: %s", asctime(tm_local)); }
+  time_t currTime;
+	currTime = time(NULL);
+	tm *tmLocal = localtime(&currTime);
 
-
-
-  // yes? turn off / keep turned off tft
-  // no? turn it on / keep it turned on
-
-  // struct tm new_ts;
-  // getLocalTime(&new_ts);
-  // Serial.print("Current time obtained from RTC after NTP config and WiFi off is: ");
-  // Serial.println(&new_ts, "%A, %B %d %Y %H:%M:%S");
+  if (tmLocal->tm_hour >= 0 && tmLocal->tm_hour <= 8) {
+    if (tftState) {
+      if (DEBUG) { Serial.printf("Hour is %i, sleep TFT...\n", tmLocal->tm_hour); }
+      tft.writecommand(0x10); delay(5); // if time within boundary, turn TFT off
+      tftState = false;
+    }
+  } else {
+    if (!tftState) {
+      if (DEBUG) { Serial.printf("Hour is %i, wake TFT...\n", tmLocal->tm_hour); }
+      tft.writecommand(0x11); delay(120); // otherwise, turn TFT on
+      tftState = true;
+    }
+  }
 }
 
 void setup(void) {
@@ -443,8 +444,7 @@ void loop() {
     timeRun += MinuteCounter;
     updGraph(lastCo2);
     updTable(lastCo2, lastTemp, lastHumidity);
-    // test whether TFT screen should be off/on
-    tftSleep();
+    // tftSleep();
   }
 
   if (lastCo2 >= LED_ALARM) { // determine whether LED should be on/off
