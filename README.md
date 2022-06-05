@@ -1,5 +1,4 @@
 # BSides Perth 2018 Badge - Environment Monitor
-
 A portable CO2, temperature, and humidity monitor with a WiFi-enabled dashboard, data logging & CSV export using the BSides Perth 2018 badge.
 
 This code is compatible with any ESP8266 microcontroller but some modifications will be necessary to convert it to another badge or TFT screen.
@@ -22,7 +21,6 @@ This code is compatible with any ESP8266 microcontroller but some modifications 
 It's assumed you have access to a small amount of copper wire, a soldering iron, and solder.
 
 ## Schematic:
-
 This schematic shows only the connections necessary to convert the BSides badge. If you are going to use this project with a different badge/TFT screen, you may need to make modifications here. That is outside of this project's scope.
 
 ![Schematic](github_pics/schematic.png)
@@ -43,8 +41,7 @@ This schematic shows only the connections necessary to convert the BSides badge.
     * Reuse the `CircularBuffer<uint16_t,120> co2Buffer;` for the TFT graph.
     * Store temp and humidity as two `uint8_t`'s (i.e. `uint8 + "." + uint8`) rather than 32bit floats. This reduces the precision from 6 decimal places to 3 but halves the RAM required.
 
-## Battery Life
-
+## Battery Life:
 On typical/uninteresting Duracell AA batteries (LR6) I got 2 hours of accurate data with WiFi enabled & connected. At 2.5 hours the TFT backlight was dimming and flickering slightly, the CO2 measurements were reading low (100-200ppm lower), and I lost confidence in their accuracy by 3.5 hours. Sometime later the SCD30 stopped collecting data. Methods of increasing battery lifespan:
 * Disable WiFi in the settings.
 * By default SCD30 takes measurements every 2 seconds. This is configurable up-to 30 minutes. Reduce the reading frequency and hence the number of refreshes of the TFT.
