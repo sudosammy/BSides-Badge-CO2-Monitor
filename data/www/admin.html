@@ -1,0 +1,98 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+	<link rel="stylesheet" href="main.css" />
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css"/>
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css"/>
+	<link rel="stylesheet" type="text/css" href="datatables-dark.min.css"/>
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.12.1/dataRender/datetime.js"></script>
+<title>Admin - Environment Monitor</title>
+<meta charset="utf-8" />
+</head>
+<body>
+	<div class="center-sensor">
+		<h2>Sensor Calibration</h2>
+		<div id="sensor">
+			<p>Place sensor outside for 2 minutes to stablise.</p>
+			<p>Input real PPM of outside air (should be ~400ppm).</p>
+			<form action="/admin" method="post">
+				<p><input type="number" min="400" max="2000" name="PPM" placeholder="PPM"> <input type="submit" class="dt-button buttons-html5" name="calibrate" value="Calibrate now!"></p>
+			</form>
+		</div>
+	</div>
+
+	<table id="adminTable" class="display">
+		<thead>
+			<tr>
+				<th>Setting Name</th>
+				<th>Current Value</th>
+				<!-- <th>New Value</th> -->
+			</tr>
+		</thead>
+
+		<tfoot>
+			<tr>
+				<th>Setting Name</th>
+				<th>Current Value</th>
+				<!-- <th>New Value</th> -->
+			</tr>
+		</tfoot>
+	</table>
+</body> 
+<script type="text/javascript">
+var getUrlParameter = function getUrlParameter(sParam) {
+	var sPageURL = window.location.search.substring(1),
+		sURLVariables = sPageURL.split('&'),
+		sParameterName,
+		i;
+
+	for (i = 0; i < sURLVariables.length; i++) {
+		sParameterName = sURLVariables[i].split('=');
+
+		if (sParameterName[0] === sParam) {
+			return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+		}
+	}
+	return false;
+};
+
+$(document).ready(function () {
+
+	var msg = getUrlParameter('msg');
+	if (msg == "success") {
+		$("#sensor").text("Sensor has been calibrated!");
+	}
+	if (msg == "error") {
+		$("#sensor").text("setForcedRecalibrationFactor failed!");
+	}
+	if (msg == "invalid") {
+		$("#sensor").text("Couldn't read PPM value...");
+	}
+
+	$('#adminTable').DataTable({
+		"ajax": {
+		"url": "/settings",
+		"dataSrc": "data"
+		},
+		// "columns": [
+		//     null,
+		//     null,
+		//     {
+		//         defaultContent: '<input type="text" name="name" placeholder="New Value">'
+		//     }
+		// ],
+		stateSave: true,
+		dom: 'Bfrtip',
+		buttons: [
+		'copy', 'csv'
+		]
+	});
+});
+</script>
+</html>
+

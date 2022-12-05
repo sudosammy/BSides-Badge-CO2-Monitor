@@ -1,73 +1,86 @@
 body {
-  background-color: rgba(0,0,0,0.8);
-  color: rgb(216, 216, 216);
-  font-family: Hevletica, sans-serif;
-  
+	background-color: rgba(0,0,0,0.8);
+	color: rgb(216, 216, 216);
+	font-family: Hevletica, sans-serif;
+	
 }
 
 .center-gauges {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  margin-bottom: 50px;
+	width: 100%;
+	display: flex;
+	justify-content: center;
+	margin-bottom: 50px;
+}
+
+.center-sensor {
+	margin: 50px auto;
+	width: 380px;
 }
 
 .gauge-container {
-  width: 30%;
-  max-width: 350px;
-  display: block;
-  float: left;
-  padding: 10px;
-  background-color: #222;
-  margin: 7px;
-  border-radius: 3px;
-  position: relative;
+	width: 30%;
+	max-width: 350px;
+	display: block;
+	float: left;
+	padding: 10px;
+	background-color: #222;
+	margin: 7px;
+	border-radius: 3px;
+	position: relative;
 }
 .gauge-container > .label {
-  position: absolute;
-  right: 0;
-  top: 0;
-  display: inline-block;
-  background: rgba(0,0,0,0.5);
-  font-family: monospace;
-  font-size: 1em;
-  padding: 5px 10px;
+	position: absolute;
+	right: 0;
+	top: 0;
+	display: inline-block;
+	background: rgba(0,0,0,0.5);
+	font-family: monospace;
+	font-size: 1em;
+	padding: 5px 10px;
 }
 .gauge-container > .gauge .dial {
-  stroke: #334455;
-  stroke-width: 2;
-  fill: rgba(0,0,0,0);
+	stroke: #334455;
+	stroke-width: 2;
+	fill: rgba(0,0,0,0);
 }
 .gauge-container > .gauge .value {
-  stroke: rgb(47, 227, 255);
-  stroke-width: 2;
-  fill: rgba(0,0,0,0);
+	stroke: rgb(47, 227, 255);
+	stroke-width: 2;
+	fill: rgba(0,0,0,0);
 }
 .gauge-container > .gauge .value-text {
-  fill: rgb(47, 227, 255);
-  font-family: sans-serif;
-  font-weight: bold;
-  font-size: 0.8em;
+	fill: rgb(47, 227, 255);
+	font-family: sans-serif;
+	font-weight: bold;
+	font-size: 0.8em;
 }
 
 .gauge-container.four > .gauge .dial {
-  stroke: #334455;
-  stroke-width: 10;
+	stroke: #334455;
+	stroke-width: 10;
 }
 .gauge-container.four > .gauge .value {
-  stroke-dasharray: none;
-  stroke-width: 10;
+	stroke-dasharray: none;
+	stroke-width: 10;
 }
 .gauge-container.four > .gauge .value-text {
-  fill: #ffffff;
-  transform: translate3d(26%, 20%, 0);
-  display: inline-block;
+	fill: #ffffff;
+	transform: translate3d(26%, 20%, 0);
+	display: inline-block;
 }
 .gauge-container.four .value-text {
-  color: #ffffff;
-  font-weight: 100;
-  position: absolute;
-  bottom: 40%;
-  right: 5%;
-  display: inline-block;
+	color: #ffffff;
+	font-weight: 100;
+	position: absolute;
+	bottom: 40%;
+	right: 5%;
+	display: inline-block;
 } 
+
+input[type="number"] {
+	border: 1px solid #aaa;
+	border-radius: 3px;
+	padding: 5px;
+	background-color: transparent;
+	margin-left: 3px;
+}

@@ -34,6 +34,9 @@ This schematic shows only the connections necessary to convert the BSides badge.
 5. Build and upload the project to the NodeMCU board. There will be several warnings during compilation but hopefully no errors
 6. Power cycle the board to clear the TFT and ensure everything is working as expected
 
+## Recalibrating
+The SCD30 comes calibrated but supports two methods of recalibration ([ASC and FRC](https://sensirion.com/media/documents/33C09C07/620638B8/Sensirion_SCD30_Field_Calibration.pdf)) if required. This monitor supports FRC recalibration over Wi-Fi. Visit `http://<hostname>/admin` to find the recalibration setting, ppm input must be between `400` and `2000`.
+
 ## Other notes:
 1. It works (significantly) better on 5V so you might want to use a USB battery pack (like a portable phone charger) rather than running from AA batteries.
 2. TODO: It's possible to increase the amount of data logged by improving the efficiency of the CircularBuffers. Some possible changes:

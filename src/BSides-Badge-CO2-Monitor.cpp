@@ -347,6 +347,64 @@ void setup(void) {
     request->send(response);
   });
 
+  server.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    DynamicJsonDocument json(512);
+    json["data"][0][0] = "WIFI_SSID";
+    json["data"][0][1] = WIFI_SSID;
+
+    json["data"][1][0] = "WIFI_PW";
+    json["data"][1][1] = "********";
+
+    json["data"][2][0] = "TIMEZONE";
+    json["data"][2][1] = TIMEZONE;
+
+    json["data"][3][0] = "DEBUG";
+    json["data"][3][1] = DEBUG;
+
+    json["data"][4][0] = "FAKE_SENSOR";
+    json["data"][4][1] = FAKE_SENSOR;
+
+    json["data"][5][0] = "ALTITUDE_ABOVE_SEA";
+    json["data"][5][1] = ALTITUDE_ABOVE_SEA;
+
+    json["data"][6][0] = "PPM_YELLOW";
+    json["data"][6][1] = PPM_YELLOW;
+
+    json["data"][7][0] = "PPM_ORANGE";
+    json["data"][7][1] = PPM_ORANGE;
+
+    json["data"][8][0] = "PPM_RED";
+    json["data"][8][1] = PPM_RED;
+
+    json["data"][9][0] = "LED_ALARM";
+    json["data"][9][1] = LED_ALARM;
+
+    serializeJson(json, *response);
+    response->addHeader("Cache-Control", "no-cache");
+    response->addHeader("Access-Control-Allow-Origin", "*");
+    request->send(response);
+  });
+
+  server.on("/admin", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.printf("Redirecting to admin.html page");
+    request->redirect("/admin.html");
+  });
+
+  server.on("/admin", HTTP_POST, [](AsyncWebServerRequest *request) {
+    if (request->hasParam("PPM", true)) {
+      uint16_t ppmCalibrate = request->getParam("PPM", true)->value().toInt();
+      Serial.printf("Calibrating with Co2 PPM: %i\n", ppmCalibrate);
+
+      if (airSensor.setForcedRecalibrationFactor(ppmCalibrate)) {
+        request->redirect("/admin.html?msg=success");
+      } else {
+        request->redirect("/admin.html?msg=error");
+      }
+    }
+    request->redirect("/admin.html?msg=invalid");
+  });
+
   server.onNotFound([](AsyncWebServerRequest *request) {
     request->send(404, "text/plain", "Not found");
   });

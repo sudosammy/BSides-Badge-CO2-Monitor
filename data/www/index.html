@@ -1,57 +1,57 @@
 <!DOCTYPE HTML>
 <html lang="en">
 <head>
-    <link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
-    <link rel="stylesheet" href="main.css" />
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css"/>
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css"/>
-    <link rel="stylesheet" type="text/css" href="datatables-dark.min.css"/>
-    <script src="gauge.min.js"></script> <!-- https://github.com/naikus/svg-gauge -->
-    <script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
-    <script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.12.1/dataRender/datetime.js"></script>
+	<link rel="icon" type="image/png" href="favicon-32.png" sizes="32x32">
+	<link rel="stylesheet" href="main.css" />
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css"/>
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.3/css/buttons.dataTables.min.css"/>
+	<link rel="stylesheet" type="text/css" href="datatables-dark.min.css"/>
+	<script src="gauge.min.js"></script> <!-- https://github.com/naikus/svg-gauge -->
+	<script type="text/javascript" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/dataTables.buttons.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/buttons/2.2.3/js/buttons.html5.min.js"></script>
+	<script type="text/javascript" src="https://cdn.datatables.net/plug-ins/1.12.1/dataRender/datetime.js"></script>
 <title>Environment Monitor</title>
 <meta charset="utf-8" />
 </head>
 <body>
-    <div class="center-gauges">
-        <div id="gauge1" class="gauge-container four">
-            <span class="label">Carbon Dioxide</span>
-            <span class="value-text">ppm</span>
-        </div>
+	<div class="center-gauges">
+		<div id="gauge1" class="gauge-container four">
+			<span class="label">Carbon Dioxide</span>
+			<span class="value-text">ppm</span>
+		</div>
 
-        <div id="gauge2" class="gauge-container four">
-            <span class="label">Temperature</span>
-            <span class="value-text">°C</span>
-        </div>
+		<div id="gauge2" class="gauge-container four">
+			<span class="label">Temperature</span>
+			<span class="value-text">°C</span>
+		</div>
 
-        <div id="gauge3" class="gauge-container four">
-            <span class="label">Humidity</span>
-            <span class="value-text">%</span>
-        </div>
-    </div>
+		<div id="gauge3" class="gauge-container four">
+			<span class="label">Humidity</span>
+			<span class="value-text">%</span>
+		</div>
+	</div>
 
-    <table id="co2table" class="display">
-        <thead>
-            <tr>
-                <th>Time (UNIX)</th>
-                <th>CO2 (ppm)</th>
-                <th>Temperature (°C)</th>
-                <th>Humidity (%)</th>
-            </tr>
-        </thead>
+	<table id="co2table" class="display">
+		<thead>
+			<tr>
+				<th>Time (UNIX)</th>
+				<th>CO2 (ppm)</th>
+				<th>Temperature (°C)</th>
+				<th>Humidity (%)</th>
+			</tr>
+		</thead>
 
-        <tfoot>
-            <tr>
-                <th>Time</th>
-                <th>CO2</th>
-                <th>Temperature</th>
-                <th>Humidity</th>
-            </tr>
-        </tfoot>
-    </table>
+		<tfoot>
+			<tr>
+				<th>Time</th>
+				<th>CO2</th>
+				<th>Temperature</th>
+				<th>Humidity</th>
+			</tr>
+		</tfoot>
+	</table>
 </body> 
 <script src="main.js"></script>
 </html>
